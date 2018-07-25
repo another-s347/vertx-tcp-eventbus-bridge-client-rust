@@ -1,0 +1,9 @@
+.idea
+.vscode
+/target
+**/*.rs.bk
+Cargo.lock
+test-server-scala/.idea
+test-server-scala/.vertx
+test-server-scala/target
+test-server-scala/project/target

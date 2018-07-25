@@ -1,0 +1,12 @@
+[package]
+name = "vertx-tcp-eventbus-bridge-client-rust"
+version = "0.1.0"
+authors = ["skye347 <s347419313@gmail.com>"]
+
+[dependencies]
+serde_json = "1.0"
+serde = "1.0"
+serde_derive = "1.0"
+bytes = "0.4"
+byteorder="1.2.3"
+crossbeam = "0.3.2"

@@ -1,5 +1,8 @@
 # A work-in-progress vert.x tcp eventbus bridge client in Rust
 
+x86 Build:
+![Build Status](http://207.148.29.43:8081/query/vertx-tcp-bridge-eventbus-rust-x86/push/status)
+
 ## The protocol ( https://github.com/vert-x3/vertx-tcp-eventbus-bridge)
 
 The protocol is quite simple:

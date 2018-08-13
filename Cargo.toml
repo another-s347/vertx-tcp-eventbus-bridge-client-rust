@@ -2,6 +2,12 @@
 name = "vertx-tcp-eventbus-bridge-client-rust"
 version = "0.1.0"
 authors = ["skye347 <s347419313@gmail.com>"]
+exclude = [
+    "test-server-scala/*",
+    "build-arm.sh",
+    "build.sh",
+    ".travis.yml"
+]
 
 [dependencies]
 serde_json = "1.0"

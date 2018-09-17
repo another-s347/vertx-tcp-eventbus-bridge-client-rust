@@ -38,7 +38,7 @@ impl<'b> Eventbus<'b> {
 
     pub fn connect_with_config(addr: &str, config: config::Configuration) -> Result<Eventbus<'static>, Error> {
         if let Some(tp)=config.thread_pool {
-            tp.install(Eventbus::connect(addr))
+            tp.install(||Eventbus::connect(addr))
         }
         else{
             Eventbus::connect(addr)

@@ -1,5 +1,4 @@
-use rayon::ThreadPool;
-use rayon;
+use rayon::{ThreadPool,ThreadPoolBuilder};
 
 pub struct Configuration{
     pub thread_pool:Option<ThreadPool>
@@ -12,8 +11,8 @@ impl Configuration{
         }
     }
 
-    pub fn thread_num(mut self, thread_num:i32) ->Configuration{
-        let tp=rayon::ThreadPool::new(rayon::Configuration::new().num_threads(thread_num)).unwrap();
+    pub fn thread_num(mut self, thread_num:usize) ->Configuration{
+        let tp=ThreadPoolBuilder::new().num_threads(thread_num).build().unwrap();
         self.thread_pool =Some(tp);
         self
     }

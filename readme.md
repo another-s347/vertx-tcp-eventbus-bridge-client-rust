@@ -76,6 +76,18 @@ eb.send("test", json!({
 });
 ```
 
+## Use thread pool (from rayon https://github.com/rayon-rs/rayon)
+
+### Configuration
+```rust
+let c=config::Configuration::new().thread_num(4); // use a threadpool with 4 workers
+// OR
+let tp=rayon::ThreadPoolBuilder::new().num_threads(thread_num).build().unwrap() // build rayon threadpool
+let c=config::Configuration::new().thread_pool(tp); // create configuration
+// connect with config
+let mut eb=eventbus::Eventbus::connect_with_config("127.0.0.1:12345",c).unwrap();
+```
+
 ## Dependency
 
 ### Json
@@ -86,5 +98,5 @@ eb.send("test", json!({
 ### Bytes
 * bytes = "0.4"
 
-### Scoped thread
-* crossbeam = "0.3.2"
+### Scoped thread pool
+* rayon = "1.0.2"

@@ -4,11 +4,12 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate byteorder;
-extern crate crossbeam;
+extern crate rayon;
 pub mod protocol;
 pub mod response;
 pub mod request;
 pub mod eventbus;
+pub mod config;
 
 #[cfg(test)]
 mod tests {

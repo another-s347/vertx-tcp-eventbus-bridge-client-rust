@@ -1,5 +1,25 @@
 language: rust
+os:
+  - linux
 rust:
-  - 1.26.2
+  - stable
+matrix:
+  include:
+    - env: TARGET=aarch64-unknown-linux-gun
+    - env: TARGET=arm-unknown-linux-guneabi
+      addons:
+        apt:
+          packages:
+            - gcc-arm-linux-gnueabi
+            - libc6-armel-cross
+            - libc6-dev-armel-cross
+    - env: TARGET=arm-unknown-linux-gnueabihf
+      addons:
+        apt:
+          packages: &armhf
+            - gcc-arm-linux-gnueabihf
+            - libc6-armhf-cross
+            - libc6-dev-armhf-cross
+    - env: TARGET=x86_64-unknown-linux-gnu
 script:
   - cargo build --verbose --all

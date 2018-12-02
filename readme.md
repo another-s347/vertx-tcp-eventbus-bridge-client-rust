@@ -1,6 +1,6 @@
-# A work-in-progress vert.x tcp eventbus bridge client in Rust
+# A work-in-progress vert.x tcp eventbus bridge client in Rust (experimental branch)
 
-[![Build Status](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust.svg?branch=master)](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust)
+[![Build Status](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust.svg?branch=tokio)](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust)
 
 ## The protocol ( https://github.com/vert-x3/vertx-tcp-eventbus-bridge)
 
@@ -65,26 +65,20 @@ type is shown below, along with the companion keys for that type:
 
 `ping` requires no additional keys.
 
+## Experimental branch
+
+For the upcoming Rust 2018 Edition, this branch uses preview features like async/await.   
+
 ## Example
 
 ```rust
-let mut eb=eventbus::Eventbus::connect("127.0.0.1:12345").unwrap();
-eb.send("test", json!({
-    "aaaa":"bbbb"
-}), |res|{
-    println!("callback {:?}", res);
+tokio::run_async(async {
+    let mut eb=await!(eventbus::Eventbus::connectFuture("127.0.0.1:12345"));
+    await!(eb.send("test".to_string(), json!({
+        "aaaa":"bbbb"
+    }), |r|{
+        println!("callback {:?}", r);
+        println!("callback {}", 1);
+    }));
 });
 ```
-
-## Dependency
-
-### Json
-* serde_json = "1.0"
-* serde = "1.0"
-* serde_derive = "1.0"
-
-### Bytes
-* bytes = "0.4"
-
-### Scoped thread
-* crossbeam = "0.3.2"

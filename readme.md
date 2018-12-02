@@ -1,5 +1,10 @@
 # A work-in-progress vert.x tcp eventbus bridge client in Rust
 
+### Current Status
+
+Waiting for Rust 2018 Edition.
+Testing new features in tokio branch.
+
 [![Build Status](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust.svg?branch=master)](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust)
 
 ## The protocol ( https://github.com/vert-x3/vertx-tcp-eventbus-bridge)

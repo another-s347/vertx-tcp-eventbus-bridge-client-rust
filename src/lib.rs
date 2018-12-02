@@ -1,13 +1,10 @@
-extern crate bytes;
+#![feature(await_macro, async_await, futures_api)]
+#[macro_use]
+extern crate tokio;
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate byteorder;
-extern crate crossbeam;
-extern crate tokio;
-extern crate tokio_io;
-extern crate futures;
 pub mod protocol;
 pub mod response;
 pub mod request;
@@ -17,24 +14,18 @@ pub mod eventbus;
 mod tests {
     use std::io::Error;
     use std::net::SocketAddr;
-    use eventbus;
-
-    fn test_connect()->Result<(),Error>{
-        let mut eb=eventbus::Eventbus::connect("127.0.0.1:12345").unwrap();
-        eb.send("test", json!({
-            "aaaa":"bbbb"
-        }), |r|{
-            println!("callback {:?}", r);
-            println!("callback {}", 1);
-        });
-        loop{};
-    }
+    use crate::eventbus;
 
     #[test]
-    fn it_works() {
-        match test_connect() {
-            Ok(_)=>(),
-            Err(e)=>println!("{}",e)
-        }
+    fn test_async(){
+        tokio::run_async(async {
+            let mut eb=await!(eventbus::Eventbus::connectFuture("127.0.0.1:12345"));
+            await!(eb.send("test".to_string(), json!({
+                "aaaa":"bbbb"
+            }), |r|{
+                println!("callback {:?}", r);
+                println!("callback {}", 1);
+            }));
+        });
     }
 }

@@ -2,7 +2,7 @@ use serde_json;
 use serde_json::Value;
 
 //Messages from the bridge -> client
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum Response {
     ERR(ErrorType),
     MESSAGE(ResponseMessageObject),
@@ -10,7 +10,7 @@ pub enum Response {
     PONG,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrorType {
     access_denied,
     address_required,
@@ -18,7 +18,7 @@ pub enum ErrorType {
     unknown_type,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ResponseMessageObject {
     address: String,
     body: Value,
@@ -27,7 +27,7 @@ pub struct ResponseMessageObject {
     send: bool,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ResponseFailObject {
     failureCode: i32,
     failureType: String,
@@ -36,8 +36,8 @@ pub struct ResponseFailObject {
 }
 
 impl Response {
-    pub fn from_str<'a>(s: &'a str) -> (Response,String) {
-        let v: Value = serde_json::from_str(s).unwrap();
+    pub fn from_slice(s: &[u8]) -> (Response, String) {
+        let v: Value = serde_json::from_slice(s).unwrap();
         let typ = &v["type"].as_str().expect("type should be string");
         let addr= v["address"].as_str().expect("address should be string").to_string();
         match typ.as_ref() {
@@ -50,13 +50,13 @@ impl Response {
                     "unknown_address" => (Response::ERR(ErrorType::unknown_address),addr),
                     "unknown_type" => (Response::ERR(ErrorType::unknown_type),addr),
                     _ => {
-                        let j: ResponseFailObject = serde_json::from_str(s).unwrap();
+                        let j: ResponseFailObject = serde_json::from_slice(s).unwrap();
                         (Response::MESSAGE_FAIL(j),addr)
                     }
                 }
             }
             "message" => {
-                let j: ResponseMessageObject = serde_json::from_str(s).unwrap();
+                let j: ResponseMessageObject = serde_json::from_slice(s).unwrap();
                 (Response::MESSAGE(j),addr)
             }
             _ => panic!(""),

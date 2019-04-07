@@ -1,28 +1,24 @@
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::io::Error as IoError;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, RwLock};
 
 use crossbeam::sync::ArcCell;
-use futures::{AsyncSink, IntoFuture, StartSend};
+use futures::IntoFuture;
 use futures::stream::Forward;
 use futures::sync::mpsc::*;
 use futures::sync::oneshot::{self, Receiver as OneshotReceiver, Sender as OneshotSender};
 use serde_json::Value;
 use tokio::codec::{FramedRead, FramedWrite};
 use tokio::io::{ErrorKind, ReadHalf, WriteHalf};
-use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::io::AsyncRead;
 use tokio::net::TcpStream;
-use tokio::prelude::{Async, Poll, Stream};
+use tokio::prelude::{Async, Stream};
 use tokio::prelude::future::Future;
-use tokio::prelude::Sink;
 
 use crate::codec::{RequestCodec, ResponseCodec};
-use crate::future::Sender::Unbounded;
 use crate::request;
 use crate::request::Request;
-use crate::request::Request::register;
 use crate::response::Response;
 
 pub struct Eventbus {
@@ -32,7 +28,7 @@ pub struct Eventbus {
 
 pub struct EventbusWriteStream {
     inner: FramedWrite<WriteHalf<TcpStream>, RequestCodec>,
-    rx: UnboundedReceiverWithError<Request>
+    rx: UnboundedReceiverWithError<Request>,
 }
 
 pub struct EventbusReadStream {
@@ -52,7 +48,7 @@ impl Stream for EventbusReadStream {
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
         match self.reader.poll() {
             Ok(Async::Ready(Some((response, address)))) => {
-                self.send(&address,response.clone());
+                self.send(&address, response.clone());
                 return Ok(Async::Ready(Some((response, address))));
             }
             other => other
@@ -68,10 +64,10 @@ impl<T> Stream for UnboundedReceiverWithError<T> {
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
         match self.0.poll() {
-            Err(_)=>{
-                Err(IoError::new(ErrorKind::BrokenPipe,"UnboundedSender closed ?"))
+            Err(_) => {
+                Err(IoError::new(ErrorKind::BrokenPipe, "UnboundedSender closed ?"))
             }
-            Ok(other)=>{
+            Ok(other) => {
                 Ok(other)
             }
         }
@@ -79,8 +75,8 @@ impl<T> Stream for UnboundedReceiverWithError<T> {
 }
 
 impl IntoFuture for EventbusWriteStream {
-    type Future = Forward<UnboundedReceiverWithError<Request>,FramedWrite<WriteHalf<TcpStream>,RequestCodec>>;
-    type Item = (UnboundedReceiverWithError<Request>,FramedWrite<WriteHalf<TcpStream>,RequestCodec>);
+    type Future = Forward<UnboundedReceiverWithError<Request>, FramedWrite<WriteHalf<TcpStream>, RequestCodec>>;
+    type Item = (UnboundedReceiverWithError<Request>, FramedWrite<WriteHalf<TcpStream>, RequestCodec>);
     type Error = IoError;
 
     fn into_future(self) -> Self::Future {
@@ -102,8 +98,8 @@ impl Future for ResponseFut {
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         match self.rx.poll() {
-            Ok(i)=>Ok(i),
-            Err(e)=>Err(IoError::new(ErrorKind::Other,"canceled"))
+            Ok(i) => Ok(i),
+            Err(_) => Err(IoError::new(ErrorKind::Other, "canceled"))
         }
     }
 }
@@ -119,7 +115,7 @@ impl Stream for ResponseStream {
 }
 
 impl Eventbus {
-    pub fn connect(address: IpAddr, port: u16) -> impl Future<Item=(Eventbus,EventbusReadStream,EventbusWriteStream),Error=IoError> {
+    pub fn connect(address: IpAddr, port: u16) -> impl Future<Item=(Eventbus, EventbusReadStream, EventbusWriteStream), Error=IoError> {
         TcpStream::connect(&SocketAddr::new(address.clone(), port)).map(move |s| {
             let (write_tx, write_rx) = unbounded();
             let map = Arc::new(RwLock::new(HashMap::new()));
@@ -132,26 +128,26 @@ impl Eventbus {
             };
             let write_stream = EventbusWriteStream {
                 inner: writer,
-                rx: UnboundedReceiverWithError(write_rx)
+                rx: UnboundedReceiverWithError(write_rx),
             };
             let eventbus = Eventbus {
                 tx: map,
-                writer: write_tx
+                writer: write_tx,
             };
-            (eventbus,read_stream,write_stream)
+            (eventbus, read_stream, write_stream)
         })
     }
 
-    fn send_frame(&self, req:Request)->Result<(),SendError<Request>> {
+    fn send_frame(&self, req: Request) -> Result<(), SendError<Request>> {
         self.writer.unbounded_send(req)
     }
 
-    pub fn register(&self, address: String, headers: Option<Value>) -> Result<ResponseStream,SendError<Request>> {
-        let req = request::Request::register(request::RegisterObject{
+    pub fn register(&self, address: String, headers: Option<Value>) -> Result<ResponseStream, SendError<Request>> {
+        let req = request::Request::Register {
             address: address.to_string(),
             headers,
-        });
-        self.send_frame(req).map(|_|{
+        };
+        self.send_frame(req).map(|_| {
             let (tx, rx) = unbounded();
             let mut map = self.tx.write().unwrap();
             map.insert(address, Sender::Unbounded(tx));
@@ -161,39 +157,39 @@ impl Eventbus {
         })
     }
 
-    pub fn unregister(&self, address:String) {
-        let req=request::Request::unregister(request::RegisterObject{
+    pub fn unregister(&self, address: String) {
+        let req = request::Request::Unregister {
             address: address.to_string(),
-            headers: None
-        });
+            headers: None,
+        };
         self.send_frame(req).unwrap();
-        let mut map=self.tx.write().unwrap();
+        let mut map = self.tx.write().unwrap();
         map.remove(&address);
     }
 
-    pub fn ping(&mut self)->Result<(),SendError<Request>>{
-        let s=request::Request::ping;
+    pub fn ping(&mut self) -> Result<(), SendError<Request>> {
+        let s = request::Request::Ping;
         self.send_frame(s)
     }
 
-    pub fn send(&self,address:String,message:Value)->Result<(),SendError<Request>> {
-        let req=request::Request::send(request::RegularRequestObject{
-            address:address.to_string(),
-            body:message,
-            headers:None,
-            replyAddress:Some(address.to_string())
-        });
+    pub fn send(&self, address: String, message: Value) -> Result<(), SendError<Request>> {
+        let req = request::Request::Send {
+            address: address.to_string(),
+            body: message,
+            headers: None,
+            replyAddress: Some(address.to_string()),
+        };
         self.send_frame(req)
     }
 
-    pub fn send_reply(&self,address:String, message:Value)->Result<ResponseFut,SendError<Request>> {
-        let req=request::Request::send(request::RegularRequestObject{
-            address:address.to_string(),
-            body:message,
-            headers:None,
-            replyAddress:Some(address.to_string())
-        });
-        self.send_frame(req).map(|_|{
+    pub fn send_reply(&self, address: String, message: Value) -> Result<ResponseFut, SendError<Request>> {
+        let req = request::Request::Send {
+            address: address.to_string(),
+            body: message,
+            headers: None,
+            replyAddress: Some(address.to_string()),
+        };
+        self.send_frame(req).map(|_| {
             let (tx, rx) = oneshot::channel();
             let mut map = self.tx.write().unwrap();
             map.insert(address, Sender::Oneshot(ArcCell::new(Arc::new(Some(tx)))));
@@ -203,13 +199,13 @@ impl Eventbus {
         })
     }
 
-    pub fn publish(&mut self,address:String,message:Value)->Result<(),SendError<Request>>{
-        let req=request::Request::publish(request::RegularRequestObject{
-            address:address.to_string(),
-            body:message,
-            headers:None,
-            replyAddress:None
-        });
+    pub fn publish(&mut self, address: String, message: Value) -> Result<(), SendError<Request>> {
+        let req = request::Request::Publish {
+            address: address.to_string(),
+            body: message,
+            headers: None,
+            replyAddress: None,
+        };
         self.send_frame(req)
     }
 }
@@ -231,7 +227,7 @@ impl EventbusReadStream {
 //                    true
                     let tx_opt = Arc::try_unwrap(cell.set(Arc::new(None))).unwrap();
                     if let Some(tx) = tx_opt {
-                        tx.send(response);
+                        tx.send(response).unwrap();
                     }
                     true
                 }

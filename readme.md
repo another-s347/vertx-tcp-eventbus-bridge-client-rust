@@ -28,8 +28,8 @@ It is the response to the `ping` request from client to bridge.
 ####  `type: "err"`
 
 * `message`: (string, required) The type of error, one of:
-  `"access_denied"`, `"address_required"`, `"unknown_address"`,
-  `"unknown_type"`
+  `"AccessDenied"`, `"AddressRequired"`, `"UnknownAddress"`,
+  `"UnknownType"`
 
 #### `type: "message"`
 

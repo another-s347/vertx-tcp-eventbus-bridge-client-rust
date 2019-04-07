@@ -1,63 +1,65 @@
+#![allow(non_snake_case)]
+
 use serde_json;
 use serde_json::Value;
 
 //Messages from the bridge -> client
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum Response {
     ERR(ErrorType),
     MESSAGE(ResponseMessageObject),
-    MESSAGE_FAIL(ResponseFailObject),
+    MessageFail(ResponseFailObject),
     PONG,
 }
 
 #[derive(Debug, Clone)]
 pub enum ErrorType {
-    access_denied,
-    address_required,
-    unknown_address,
-    unknown_type,
+    AccessDenied,
+    AddressRequired,
+    UnknownAddress,
+    UnknownType,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResponseMessageObject {
-    address: String,
-    body: Value,
-    headers: Option<Value>,
-    replyAddress: Option<String>,
-    send: bool,
+    pub address: String,
+    pub body: Value,
+    pub headers: Option<Value>,
+    pub replyAddress: Option<String>,
+    pub send: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResponseFailObject {
-    failureCode: i32,
-    failureType: String,
-    message: String,
-    sourceAddress: String,
+    pub failureCode: i32,
+    pub failureType: String,
+    pub message: String,
+    pub sourceAddress: String,
 }
 
 impl Response {
     pub fn from_slice(s: &[u8]) -> (Response, String) {
         let v: Value = serde_json::from_slice(s).unwrap();
-        let typ = &v["type"].as_str().expect("type should be string");
-        let addr= v["address"].as_str().expect("address should be string").to_string();
+        let typ = v["type"].as_str().expect("type should be string");
+        let addr = v["address"].as_str().expect("address should be string").to_string();
         match typ.as_ref() {
-            "pong" => (Response::PONG,"".to_string()),
+            "pong" => (Response::PONG, "".to_string()),
             "err" => {
-                let err_msg = &v["message"].as_str().expect("message should be string");
+                let err_msg = v["message"].as_str().expect("message should be string");
                 match err_msg.as_ref() {
-                    "access_denied" => (Response::ERR(ErrorType::access_denied),addr),
-                    "address_required" => (Response::ERR(ErrorType::address_required),addr),
-                    "unknown_address" => (Response::ERR(ErrorType::unknown_address),addr),
-                    "unknown_type" => (Response::ERR(ErrorType::unknown_type),addr),
+                    "access_denied" => (Response::ERR(ErrorType::AccessDenied), addr),
+                    "address_required" => (Response::ERR(ErrorType::AddressRequired), addr),
+                    "unknown_address" => (Response::ERR(ErrorType::UnknownAddress), addr),
+                    "unknown_type" => (Response::ERR(ErrorType::UnknownType), addr),
                     _ => {
                         let j: ResponseFailObject = serde_json::from_slice(s).unwrap();
-                        (Response::MESSAGE_FAIL(j),addr)
+                        (Response::MessageFail(j), addr)
                     }
                 }
             }
             "message" => {
                 let j: ResponseMessageObject = serde_json::from_slice(s).unwrap();
-                (Response::MESSAGE(j),addr)
+                (Response::MESSAGE(j), addr)
             }
             _ => panic!(""),
         }

@@ -8,6 +8,7 @@ exclude = [
     "build.sh",
     ".travis.yml"
 ]
+edition = "2018"
 
 [dependencies]
 serde_json = "1.0"
@@ -16,3 +17,5 @@ serde_derive = "1.0"
 bytes = "0.4"
 byteorder="1.2.3"
 crossbeam = "0.3.2"
+tokio = "0.1.18"
+futures = "0.1"

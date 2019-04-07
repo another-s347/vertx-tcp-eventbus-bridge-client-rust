@@ -2,8 +2,7 @@
 
 ### Current Status
 
-Waiting for Rust 2018 Edition.
-Testing new features in tokio branch.
+Upcoming future based eventbus (v 0.2.0)
 
 [![Build Status](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust.svg?branch=master)](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust)
 
@@ -73,12 +72,22 @@ type is shown below, along with the companion keys for that type:
 ## Example
 
 ```rust
-let mut eb=eventbus::Eventbus::connect("127.0.0.1:12345").unwrap();
-eb.send("test", json!({
-    "aaaa":"bbbb"
-}), |res|{
-    println!("callback {:?}", res);
-});
+        let task = future::Eventbus::connect(IpAddr::from_str("127.0.0.1").unwrap(), 12345);
+        let task = task.and_then(|(eventbus, readstream, writestream)| {
+            tokio::spawn(readstream.into_future().map(|_|()).map_err(|e|()));
+            tokio::spawn(writestream.into_future().map(|_|()).map_err(|e|()));
+            futures::future::ok(eventbus)
+        });
+        let task = task.and_then(|eventbus:Eventbus|{
+            let test_reply=eventbus.send_reply("test".to_string(),json!({
+                "aaaa":"bbbb"
+            })).unwrap().and_then(|response|{
+                println!("{:?}",response);
+                futures::future::ok(())
+            });
+            test_reply
+        });
+        tokio::run(task.map_err(|e|()));
 ```
 
 ## Dependency
@@ -90,6 +99,3 @@ eb.send("test", json!({
 
 ### Bytes
 * bytes = "0.4"
-
-### Scoped thread
-* crossbeam = "0.3.2"

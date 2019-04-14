@@ -1,6 +1,6 @@
 [package]
 name = "vertx-tcp-eventbus-bridge-client-rust"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["skye347 <s347419313@gmail.com>"]
 exclude = [
     "test-server-scala/*",
@@ -9,6 +9,8 @@ exclude = [
     ".travis.yml"
 ]
 edition = "2018"
+keywords = ["eventbus", "vert.x"]
+license = "MIT"
 
 [dependencies]
 serde_json = "1.0"

@@ -9,7 +9,7 @@ exclude = [
     ".travis.yml"
 ]
 edition = "2018"
-keywords = ["eventbus", "vert.x"]
+keywords = ["eventbus", "vertx"]
 license = "MIT"
 
 [dependencies]

@@ -3,7 +3,20 @@
 use std::collections::HashMap;
 use serde_json::Value;
 
-//Message from the client -> bridge
+/// Message sent from client to vert.x eventbus, can be serialized to json.
+///
+/// The body is a json value provided by [serde_json::value](https://docs.serde.rs/serde_json/value/enum.Value.html).
+/// For more explain for each fields, please visit
+/// # Examples
+/// ```
+/// use vertx_tcp_eventbus_bridge_client_rust::request::Request;
+/// let req = Request::Send {
+///     address: "address".to_string(),
+///     body: json!(...),
+///     headers: None,
+///     replyAddress: None
+/// };
+/// ```
 pub enum Request {
     Send {
         address: String,

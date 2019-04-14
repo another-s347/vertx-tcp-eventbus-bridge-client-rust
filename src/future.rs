@@ -21,16 +21,25 @@ use crate::request;
 use crate::request::Request;
 use crate::response::Response;
 
+/// The core struct to communicate with vert.x eventbus.
+/// Can be created by calling `Eventbus::connect`.
 pub struct Eventbus {
     tx: Arc<RwLock<HashMap<String, Sender>>>,
     writer: UnboundedSender<Request>,
 }
 
-pub struct EventbusWriteStream {
+/// Responsible for writing messages to the server through vert.x protocol.
+/// Should be spawned into background.
+/// Can be created by calling `Eventbus::connect`.
+pub struct EventbusWriteFuture {
     inner: FramedWrite<WriteHalf<TcpStream>, RequestCodec>,
     rx: UnboundedReceiverWithError<Request>,
 }
 
+/// Responsible for reading messages from the server through vert.x protocol.
+/// It will decode and dispatch messages to related future/stream.
+/// Should be spawned into background.
+/// Can be created by calling `Eventbus::connect`.
 pub struct EventbusReadStream {
     reader: FramedRead<ReadHalf<TcpStream>, ResponseCodec>,
     tx: Arc<RwLock<HashMap<String, Sender>>>,
@@ -74,7 +83,7 @@ impl<T> Stream for UnboundedReceiverWithError<T> {
     }
 }
 
-impl IntoFuture for EventbusWriteStream {
+impl IntoFuture for EventbusWriteFuture {
     type Future = Forward<UnboundedReceiverWithError<Request>, FramedWrite<WriteHalf<TcpStream>, RequestCodec>>;
     type Item = (UnboundedReceiverWithError<Request>, FramedWrite<WriteHalf<TcpStream>, RequestCodec>);
     type Error = IoError;
@@ -84,10 +93,14 @@ impl IntoFuture for EventbusWriteStream {
     }
 }
 
+/// A stream of response messages from a subscribe/register operation.
+/// Can be created by `Eventbus.register`.
 pub struct ResponseStream {
     rx: UnboundedReceiver<Response>
 }
 
+/// A future of response messages from a send_reply operation.
+/// Can be created by `Eventbus.send_reply`.
 pub struct ResponseFut {
     rx: OneshotReceiver<Response>
 }
@@ -106,7 +119,6 @@ impl Future for ResponseFut {
 
 impl Stream for ResponseStream {
     type Item = Response;
-    //todo: Error
     type Error = ();
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
@@ -115,7 +127,7 @@ impl Stream for ResponseStream {
 }
 
 impl Eventbus {
-    pub fn connect(address: IpAddr, port: u16) -> impl Future<Item=(Eventbus, EventbusReadStream, EventbusWriteStream), Error=IoError> {
+    pub fn connect(address: IpAddr, port: u16) -> impl Future<Item=(Eventbus, EventbusReadStream, EventbusWriteFuture), Error=IoError> {
         TcpStream::connect(&SocketAddr::new(address.clone(), port)).map(move |s| {
             let (write_tx, write_rx) = unbounded();
             let map = Arc::new(RwLock::new(HashMap::new()));
@@ -126,7 +138,7 @@ impl Eventbus {
                 reader,
                 tx: map.clone(),
             };
-            let write_stream = EventbusWriteStream {
+            let write_stream = EventbusWriteFuture {
                 inner: writer,
                 rx: UnboundedReceiverWithError(write_rx),
             };
@@ -172,6 +184,7 @@ impl Eventbus {
         self.send_frame(s)
     }
 
+    /// send with no reply
     pub fn send(&self, address: String, message: Value) -> Result<(), SendError<Request>> {
         let req = request::Request::Send {
             address: address.to_string(),
@@ -182,6 +195,7 @@ impl Eventbus {
         self.send_frame(req)
     }
 
+    /// send with reply
     pub fn send_reply(&self, address: String, message: Value) -> Result<ResponseFut, SendError<Request>> {
         let req = request::Request::Send {
             address: address.to_string(),
@@ -221,10 +235,6 @@ impl EventbusReadStream {
                     }
                 }
                 Sender::Oneshot(cell) => {
-//                    if let Some(tx) = cell.set(None) {
-//                        tx.send(response);
-//                    };
-//                    true
                     let tx_opt = Arc::try_unwrap(cell.set(Arc::new(None))).unwrap();
                     if let Some(tx) = tx_opt {
                         tx.send(response).unwrap();

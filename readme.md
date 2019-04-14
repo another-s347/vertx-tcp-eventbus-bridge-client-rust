@@ -1,8 +1,6 @@
-# A work-in-progress vert.x tcp eventbus bridge client in Rust
+# A work-in-progress future based vert.x tcp eventbus bridge client in Rust
 
 ### Current Status
-
-Upcoming future based eventbus (v 0.2.0)
 
 [![Build Status](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust.svg?branch=master)](https://travis-ci.org/another-s347/vertx-tcp-eventbus-bridge-client-rust)
 
@@ -91,6 +89,9 @@ type is shown below, along with the companion keys for that type:
 ```
 
 ## Dependency
+
+### future
+* futures = "0.1"
 
 ### Json
 * serde_json = "1.0"

@@ -3,15 +3,23 @@
 use serde_json;
 use serde_json::Value;
 
-//Messages from the bridge -> client
+/// Main message received from vert.x eventbus.
+///
+/// It is usually deserialized automatically by [codec].
+/// For more explain for each fields, please visit
 #[derive(Debug, Clone)]
 pub enum Response {
+    /// Error defined by vert.x eventbus mechanism
     ERR(ErrorType),
+    /// Regular user defined message on success
     MESSAGE(ResponseMessageObject),
+    /// Regular user defined message on fail
     MessageFail(ResponseFailObject),
+    /// For ping request
     PONG,
 }
 
+/// Error defined by vert.x eventbus mechanism used by [Response]
 #[derive(Debug, Clone)]
 pub enum ErrorType {
     AccessDenied,
@@ -20,6 +28,7 @@ pub enum ErrorType {
     UnknownType,
 }
 
+/// Regular user defined message on success used by [Response]
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResponseMessageObject {
     pub address: String,
@@ -29,6 +38,7 @@ pub struct ResponseMessageObject {
     pub send: bool,
 }
 
+/// Regular user defined message on fail used by [Response]
 #[derive(Deserialize, Debug, Clone)]
 pub struct ResponseFailObject {
     pub failureCode: i32,
